@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <conio.h>
+#include <time.h>
 
 using namespace std;
 
@@ -23,7 +24,12 @@ FILE* IDs;
 
 int i = 0;
 int j = 0;
+int k = 0;
 char line[6]="-----";
+char start[2] = "{";
+char over[2] = "}";
+char id_sign[2] = "&";
+char name_sign[2] = "(";
 
 void Instructions();
 int MainPage();
@@ -44,9 +50,13 @@ void Info_User();
 void Info_introduce();
 void Info_prize();
 void Info_history();
+void About_Us();
 int Delete_ID(char *ID);
 int Existe_ID(char *ID);
-
+void Single();
+void Get_ID(char *str, int line, FILE *stream);
+int Used_Line(int id, int m, int line_list[]);
+void Record_Time(FILE *file);
 
 int main()
 {
@@ -58,11 +68,11 @@ int main()
 void Instructions()
 {
     clrscr();
-    cout << line <<"»¶Ó­À´µ½³é½±ÏµÍ³" << line << endl;
-    cout << "1.¿ªÊ¼³é½±" << endl;
-    cout << "2.ºóÌ¨¹ÜÀí" << endl;
-    cout << "3.ÐÅÏ¢²é¿´" << endl;
-    cout << "4.ÍË³ö" << endl;
+    cout << line <<"æ¬¢è¿Žæ¥åˆ°æŠ½å¥–ç³»ç»Ÿ" << line << endl;
+    cout << "1.å¼€å§‹æŠ½å¥–" << endl;
+    cout << "2.åŽå°ç®¡ç†" << endl;
+    cout << "3.ä¿¡æ¯æŸ¥çœ‹" << endl;
+    cout << "4.é€€å‡º" << endl;
 }
 
 int MainPage()
@@ -71,7 +81,7 @@ int MainPage()
     while(1){
         cin >> answer;
         switch(answer){
-//        case 1: Lottery(); break;
+        case 1: Lottery(); break;
         case 2: Back_Stage(); break;
         case 3: Info(); break;
         case 4: exit(0); break;
@@ -85,12 +95,12 @@ void Back_Stage()
     int answer = 0;
     while(!answer){
         clrscr();
-        cout << line <<"»¶Ó­À´µ½ºóÌ¨" << line << endl;
-        cout << "1.ÉèÖÃÐÅÏ¢¼ò½é" << endl;
-        cout << "2.ÉèÖÃ½±Ïî" << endl;
-        cout << "3.ÐÞ¸Ä³é½±ÀúÊ·ÐÅÏ¢" << endl;
-        cout << "4.ÓÃ»§¹ÜÀí" << endl;
-        cout << "5.·µ»Ø" << endl;
+        cout << line <<"æ¬¢è¿Žæ¥åˆ°åŽå°" << line << endl;
+        cout << "1.è®¾ç½®ä¿¡æ¯ç®€ä»‹" << endl;
+        cout << "2.è®¾ç½®å¥–é¡¹" << endl;
+        cout << "3.åˆ é™¤æŠ½å¥–åŽ†å²ä¿¡æ¯" << endl;
+        cout << "4.ç”¨æˆ·ç®¡ç†" << endl;
+        cout << "5.è¿”å›ž" << endl;
         cin >> answer;
         switch(answer){
             case 1: Info_set(); break;
@@ -108,13 +118,13 @@ void Info_set()
 {
     clrscr();
     if((inf_itdc = fopen("inf_itdc.txt","w")) == NULL){
-        cout << "´ò¿ªÎÄ¼þÊ§°Ü" << endl;
+        cout << "æ‰“å¼€æ–‡ä»¶å¤±è´¥" << endl;
         hitback();
         return;
     }
     char inf[max_n+1];
-    cout << line << "ÉèÖÃÐÅÏ¢¼ò½é" << line << endl;
-    cout << "±à¼­³é½±ÐÅÏ¢¼ò½é£º" << endl;
+    cout << line << "è®¾ç½®ä¿¡æ¯ç®€ä»‹" << line << endl;
+    cout << "ç¼–è¾‘æŠ½å¥–ä¿¡æ¯ç®€ä»‹ï¼š" << endl;
     cin >> inf;
     fwrite(inf,s_c,strlen(inf),inf_itdc);
     fclose(inf_itdc);
@@ -124,102 +134,75 @@ void History_set()
 {
     clrscr();
     if((inf_hstr = fopen("inf_hstr.txt","w+")) == NULL){
-        cout << "¶ÁÈ¡ÐÅÏ¢Ê§°Ü" << endl;
+        cout << "æš‚æ— æŠ½å¥–åŽ†å²è®°å½•" << endl;
+        hitback();
         return;
     }
-    int times = 0;  //×Ü³é½±´ÎÊý
-    int t_f = 0;    //Ò»µÈ½±³é½±´ÎÊý
-    int t_s = 0;    //¶þµÈ½±³é½±´ÎÊý
-    int t_t = 0;    //ÈýµÈ½±³é½±´ÎÊý
-
-    cout << line << "ÐÞ¸Ä³é½±ÀúÊ·ÐÅÏ¢" << line << endl;
-    while(times<=0||times>=10000){
-        cout << "×Ü³é½±´ÎÊý(´óÓÚ0Ð¡ÓÚ10000)£º";
-        cin >> times;
-    }
-    while(t_f<=0||t_f>times){
-        cout << "Ò»µÈ½±´ÎÊý(´óÓÚ0Ð¡ÓÚ" << times+1 << "):";
-        cin >> t_f;
-    }
-    while(t_s<=0||t_s>times){
-        cout << "¶þµÈ½±´ÎÊý(´óÓÚ0Ð¡ÓÚ" << times+1 << "):";
-        cin >>t_s;
-    }
-    while(t_t<=0||t_s>times){
-        cout << "ÈýµÈ½±´ÎÊý(´óÓÚ0Ð¡ÓÚ" << times+1 << "):";
-        cin >> t_t;
-    }
-    char times_c[5];
-    char t_f_c[5];
-    char t_s_c[5];
-    char t_t_c[5];
-    itoa(times,times_c,10);
-    itoa(t_f,t_f_c,10);
-    itoa(t_s,t_s_c,10);
-    itoa(t_t,t_t_c,10);
-    fwrite(times_c,s_c,strlen(times_c),inf_hstr);
-    Blank(inf_hstr);
-    fwrite(t_f_c,s_c,strlen(t_f_c),inf_hstr);
-    Blank(inf_hstr);
-    fwrite(t_s_c,s_c,strlen(t_s_c),inf_hstr);
-    Blank(inf_hstr);
-    fwrite(t_t_c,s_c,strlen(t_t_c),inf_hstr);
-    Blank(inf_hstr);
     fclose(inf_hstr);
+    cout << "æ¸…é™¤æŠ½å¥–åŽ†å²ä¿¡æ¯ï¼Ÿ" << endl;
+    cout << "1.ç¡®è®¤" << endl << "2.è¿”å›ž" << endl;
+    int answer = 0;
+    while(answer == 0){
+        cin>>answer;
+        if(answer == 1) {
+            remove("inf_hstr.txt");
+            cout << "åˆ é™¤æˆåŠŸï¼" <<endl;
+            hitback();
+            return;
+        }
+        else if(answer==2) return;
+        else answer = 0;
+    }
 }
 
 void Lottery_set()
 {
     clrscr();
-    if((inf_itdc = fopen("inf_prz.txt","w")) == NULL){
-        cout << "´ò¿ªÎÄ¼þÊ§°Ü" << endl;
+    if((inf_prz = fopen("inf_prz.txt","w")) == NULL){
+        cout << "æ‰“å¼€æ–‡ä»¶å¤±è´¥" << endl;
         return;
     }
     char name[n_name];
     char N[3];
     char inf[max_n+1];
+    int num_p = 0;
     int num = 0;
 
-    cout << line << "ÉèÖÃ½±Ïî" << line << endl;
-    for(i=1;i<4;i++){
-        cout << "ÉèÖÃ" << i << "µÈ½±" << endl;;
-        cout << "Ãû³Æ£º" ;
+    cout << line << "è®¾ç½®å¥–é¡¹" << line << endl;
+
+    while(num_p<=0||num_p>99){
+        cout << "å¥–å“ç§ç±»æ•°(1-99)ï¼š";
+        cin >>num_p;
+    }
+    itoa(num_p,N,10);
+    fwrite(N,s_c,strlen(N),inf_prz);
+    Blank(inf_prz);
+
+    for(i=0;i<num_p;i++){
+        cout << i+1 << "å·å¥–å“ï¼š"<< endl;
+        cout << "åç§°ï¼š" ;
         cin >> name;
-        while(1){
-            cout << "½±Æ·ÊýÁ¿(´óÓÚ" << min_n << "Ð¡ÓÚ" << max_n << ")" << endl;
+        num = 0;
+        while(num <=0){
+            cout << "æ•°é‡ï¼š" ;
             cin >> num;
-            if(num<=min_n||num >= max_n) cout << "²»ºÏ·¨µÄÊý×Ö£¬ÇëÖØÐÂÊäÈë" <<endl;
-            else break;
         }
+        cout << "å¥–å“è¯¦æƒ…ï¼š" ;
+        cin >> inf;
         itoa(num,N,10);
-        fwrite(name,s_c,strlen(name),inf_itdc);
-        fwrite("\n",s_c,1,inf_itdc);
-        fwrite(N,s_c,strlen(N),inf_itdc);
-        fwrite("\n",s_c,1,inf_itdc);
+        fwrite(start,s_c,1,inf_prz);
+        fwrite(N,s_c,strlen(N),inf_prz);
+        Blank(inf_prz);
+        fwrite(name_sign,s_c,1,inf_prz);
+        fwrite(name,s_c,strlen(name),inf_prz);
+        Blank(inf_prz);
+        fwrite(inf,s_c,strlen(inf),inf_prz);
+        Blank(inf_prz);
+        fwrite(over,s_c,1,inf_prz);
     }
-    fclose(inf_itdc);
-    if((inf_prz_1 = fopen("inf_prz_1.txt","w"))==NULL||(inf_prz_2 = fopen("inf_prz_2.txt","w"))==NULL||(inf_prz_3 = fopen("inf_prz_3.txt","w"))==NULL){
-        cout << "±à¼­½±Æ·ÏêÇéÒ³Ê§°Ü£¡" << endl;
-        return;
-    }
-    for(i=0;i<max_n+1;i++)
-        inf[i] = '\0';
-    cout << "Ò»µÈ½±ÐÅÏ¢£º" ;
-    cin >> inf;
-    fwrite(inf,s_c,strlen(inf),inf_prz_1);
-    for(i=0;i<max_n+1;i++)
-        inf[i] = '\0';
-    cout << "¶þµÈ½±ÐÅÏ¢£º" ;
-    cin >> inf;
-    fwrite(inf,s_c,strlen(inf),inf_prz_2);
-    for(i=0;i<max_n+1;i++)
-        inf[i] = '\0';
-    cout << "ÈýµÈ½±ÐÅÏ¢£º" ;
-    cin >> inf;
-    fwrite(inf,s_c,strlen(inf),inf_prz_3);
-    fclose(inf_prz_1);
-    fclose(inf_prz_2);
-    fclose(inf_prz_3);
+    fclose(inf_prz);
+    cout << "è®¾ç½®æˆåŠŸï¼" << endl;
+    hitback();
 }
 
 void Info()
@@ -227,19 +210,21 @@ void Info()
     int answer=0;
     while(!answer){
         clrscr();
-        cout << line << "ÐÅÏ¢²é¿´" << line << endl;
-        cout << "1.³é½±¼ò½é" << endl;
-        cout << "2.½±Æ·ÐÅÏ¢" << endl;
-        cout << "3.ÀúÊ·³é½±ÐÅÏ¢" << endl;
-        cout << "4.ÓÃ»§ÐÅÏ¢" << endl;
-        cout << "5.·µ»Ø" << endl;
+        cout << line << "ä¿¡æ¯æŸ¥çœ‹" << line << endl;
+        cout << "1.æŠ½å¥–ç®€ä»‹" << endl;
+        cout << "2.å¥–å“ä¿¡æ¯" << endl;
+        cout << "3.åŽ†å²æŠ½å¥–ä¿¡æ¯" << endl;
+        cout << "4.ç”¨æˆ·ä¿¡æ¯" << endl;
+        cout << "5.å…³äºŽæˆ‘ä»¬" << endl;
+        cout << "6.è¿”å›ž" << endl;
         cin >> answer;
         switch(answer){
             case 1: Info_introduce(); break;
             case 2: Info_prize(); break;
             case 3: Info_history(); break;
             case 4: Info_User(); break;
-            case 5: return;
+            case 5: About_Us(); break;
+            case 6: return;
             default: answer = 0;break;
         }
         answer = 0;
@@ -250,11 +235,11 @@ void Info_introduce()
 {
     clrscr();
     if((inf_itdc = fopen("inf_itdc.txt","r")) == NULL){
-        cout << "¶ÁÈ¡ÐÅÏ¢Ê§°Ü" << endl;
+        cout << "è¯»å–ä¿¡æ¯å¤±è´¥" << endl;
         return;
     }
     char word = 'a';
-    cout << line << "³é½±¼ò½é" << line <<endl;
+    cout << line << "æŠ½å¥–ç®€ä»‹" << line <<endl;
     while(word!=EOF){
         word = fgetc(inf_itdc);
         cout << word;
@@ -268,59 +253,34 @@ void Info_prize()
 {
     clrscr();
     if((inf_prz = fopen("inf_prz.txt","r")) == NULL){
-        cout << "¶ÁÈ¡ÐÅÏ¢Ê§°Ü" << endl;
+        cout << "è¯»å–ä¿¡æ¯å¤±è´¥" << endl;
+        hitback();
         return;
     }
-    char word = 'a';
+    char word = fgetc(inf_prz);
+    int num = word - '0';
 
-    cout << line << "½±Æ·ÐÅÏ¢" << line << endl;
-    for(i=1;i<4;i++){
-        cout << i << "µÈ½±: ";
-        while(1){
+    cout << line << "å¥–å“ä¿¡æ¯" << line << endl;
+    for(i=0;i<num;i++){
+        while(word!=start[0]) word = fgetc(inf_prz);
+        cout <<line<<"å¥–å“"<<i+1<<endl;
+        cout << "æ•°é‡ï¼š" ;
+        while(word!='\n') {
             word = fgetc(inf_prz);
-            if(word == '\n') break;
             cout << word;
         }
-        cout << " ÊýÁ¿: ";
-        while(1){
+        word = fgetc(inf_prz);
+        cout << "åç§°: ";
+        while((word = fgetc(inf_prz))!='\n')
+            cout << word;
+        word = 'a';
+        cout << endl <<"å¥–å“ä¿¡æ¯ï¼š";
+        while(word!='\n') {
             word = fgetc(inf_prz);
-            if(word == '\n') break;
+            if(word==over[0]) break;
             cout << word;
         }
-        cout << endl;
     }
-    if((inf_prz_1 = fopen("inf_prz_1.txt","r"))==NULL){
-        cout << "¶ÁÈ¡½±Æ·ÏêÇéÊ§°Ü" << endl;
-        return;
-    }
-    if((inf_prz_2 = fopen("inf_prz_2.txt","r"))==NULL){
-        cout << "¶ÁÈ¡½±Æ·ÏêÇéÊ§°Ü" << endl;
-        return;
-    }
-    if((inf_prz_3 = fopen("inf_prz_3.txt","r"))==NULL){
-        cout << "¶ÁÈ¡½±Æ·ÏêÇéÊ§°Ü" << endl;
-        return;
-    }
-    word = 'a';
-    cout << "½±Æ·ÏêÇé:" << endl;
-    cout << "Ò»µÈ½±£º";
-    while(word!=EOF){
-        word = fgetc(inf_prz_1);
-        cout << word;
-    }
-    word = 'a';
-    cout << endl << "¶þµÈ½±: ";
-    while(word!=EOF){
-        word = fgetc(inf_prz_2);
-        cout << word;
-    }
-    word = 'a';
-    cout << endl << "ÈýµÈ½±: ";
-    while(word!=EOF){
-        word = fgetc(inf_prz_3);
-        cout << word;
-    }
-    cout<<endl;
     hitback();
     fclose(inf_prz);
 }
@@ -329,24 +289,15 @@ void Info_history()
 {
     clrscr();
     if((inf_hstr = fopen("inf_hstr.txt","r")) == NULL){
-        cout << "¶ÁÈ¡ÐÅÏ¢Ê§°Ü" << endl;
+        cout << "æš‚æ— åŽ†å²æŠ½å¥–ä¿¡æ¯" << endl;
+        hitback();
         return;
     }
-
     char word = 'a';
-    cout << line << "ÀúÊ·³é½±ÐÅÏ¢" << line << endl;
-    cout << "×Ü¿ª½±´ÎÊý£º" ;
-    while((word = fgetc(inf_hstr))!='\n'&&word!=EOF)
+    while(word!=EOF){
+        word = fgetc(inf_hstr);
         cout << word;
-    cout << endl << "Ò»µÈ½±¿ª½±´ÎÊý£º";
-    while((word = fgetc(inf_hstr))!='\n'&&word!=EOF)
-        cout << word;
-    cout << endl << "¶þµÈ½±¿ª½±´ÎÊý£º";
-    while((word = fgetc(inf_hstr))!='\n'&&word!=EOF)
-        cout << word;
-    cout << endl << "ÈýµÈ½±¿ª½±´ÎÊý£º" ;
-    while((word = fgetc(inf_hstr))!='\n'&&word!=EOF)
-        cout << word;
+    }
     cout << endl;
     hitback();
     fclose(inf_hstr);
@@ -357,33 +308,33 @@ void Info_User()
     clrscr();
     char word = 'a';
     char ID[id_len];
-    cout << line << "ÓÃ»§ÐÅÏ¢" << endl;
-    cout << "ÊäÈëÏëÒª²é¿´µÄÓÃ»§ID: ";
+    cout << line << "ç”¨æˆ·ä¿¡æ¯" << endl;
+    cout << "è¾“å…¥æƒ³è¦æŸ¥çœ‹çš„ç”¨æˆ·ID: ";
     cin >> ID;
     if((inf_user = fopen(ID,"r"))==NULL){
-        cout << "²»´æÔÚÓÃ»§: " << ID << endl;
+        cout << "ä¸å­˜åœ¨ç”¨æˆ·: " << ID << endl;
         hitback();
         return;
     }
-    cout << "ÐÕÃû£º";
+    cout << "å§“åï¼š";
     while(word!='\n'&&word!=EOF){
         word = fgetc(inf_user);
         cout << word;
     }
     word = 'a';
-    cout << endl << "ÄêÁä£º";
+    cout << endl << "å¹´é¾„ï¼š";
     while(word!='\n'&&word!=EOF){
         word = fgetc(inf_user);
         cout << word;
     }
     word = 'a';
-    cout << endl << "ÐÔ±ð£º";
+    cout << endl << "æ€§åˆ«ï¼š";
     while(word!='\n'&&word!=EOF){
         word = fgetc(inf_user);
         cout << word;
     }
     word = 'a';
-    cout << endl << "¼ò½é£º";
+    cout << endl << "ç®€ä»‹ï¼š";
     while(word!='\n'&&word!=EOF){
         word = fgetc(inf_user);
         cout << word;
@@ -391,6 +342,26 @@ void Info_User()
     cout << endl;
     hitback();
     fclose(inf_user);
+}
+
+void About_Us()
+{
+    char word = 'a';
+    clrscr();
+    FILE *about ;
+    if((about = fopen("about_us.txt","r"))==NULL){
+        cout << "è¯»å–ä¿¡æ¯å¤±è´¥ï¼" << endl;
+        hitback();
+        return;
+    }
+    cout << line << "å…³äºŽæˆ‘ä»¬" << line <<endl;
+    while(word!=EOF){
+        word = fgetc(about);
+        cout << word;
+    }
+    cout << endl;
+    hitback();
+    fclose(about);
 }
 
 void clrscr()
@@ -413,11 +384,11 @@ void User_set()
     int answer = 0;
     while(1){
         clrscr();
-        cout << line << "ÓÃ»§¹ÜÀí" << line << endl;
-        cout << "1.Ìí¼ÓÓÃ»§" << endl;
-        cout << "2.É¾³ýÓÃ»§" << endl;
-        cout << "3.ÐÞ¸ÄÓÃ»§ÐÅÏ¢" << endl;
-        cout << "4.·µ»Ø" << endl;
+        cout << line << "ç”¨æˆ·ç®¡ç†" << line << endl;
+        cout << "1.æ·»åŠ ç”¨æˆ·" << endl;
+        cout << "2.åˆ é™¤ç”¨æˆ·" << endl;
+        cout << "3.ä¿®æ”¹ç”¨æˆ·ä¿¡æ¯" << endl;
+        cout << "4.è¿”å›ž" << endl;
         cin >> answer;
         if(answer == 1) User_add();
         else if(answer == 2) User_delete();
@@ -436,53 +407,55 @@ void User_add()
     char ID[14];
     char info[101];
     clrscr();
-    cout << line << "Ìí¼ÓÓÃ»§" << line << endl;
-    cout << "µÇ¼ÇÓÃ»§ÐÅÏ¢£º" << endl;
-    cout << "ID(ÓÃ»§Éí·ÝÊ¶±ðÂë): ";
+    cout << line << "æ·»åŠ ç”¨æˆ·" << line << endl;
+    cout << "ç™»è®°ç”¨æˆ·ä¿¡æ¯ï¼š" << endl;
+    cout << "ID(ç”¨æˆ·èº«ä»½è¯†åˆ«ç ): ";
     cin >> ID;
     if((inf_user = fopen(ID,"r"))!=NULL){
-        cout << "ÓÃ»§ÒÑ´æÔÚ" << endl;
+        cout << "ç”¨æˆ·å·²å­˜åœ¨" << endl;
         hitback();
         fclose(inf_user);
         return;
     }
 
-    cout << "ÐÕÃû(10×Ö½Ú)£º" ;
+    cout << "å§“å(10å­—èŠ‚)ï¼š" ;
     cin >> name;
     while(age<=0||age>99){
-        cout << "ÄêÁä(1-99)£º";
+        cout << "å¹´é¾„(1-99)ï¼š";
         cin >> age;
     }
     itoa(age,AGE,10);
     while(sex!=1&&sex!=2){
-        cout << "ÐÔ±ð£º1.ÄÐ\t2.Å®" << endl;
+        cout << "æ€§åˆ«ï¼š1.ç”·\t2.å¥³" << endl;
         cin >> sex;
     }
-    cout << "¸öÈË¼ò½é(100×Ö½Ú):" << endl;
+    cout << "ä¸ªäººç®€ä»‹(100å­—èŠ‚):" << endl;
     cin >> info;
 
     if((inf_user = fopen(ID,"w+"))==NULL){
-        cout << "Ìí¼ÓÓÃ»§Ê§°Ü" << endl;
+        cout << "æ·»åŠ ç”¨æˆ·å¤±è´¥" << endl;
         hitback();
         return;
     }
     if((IDs = fopen("IDs.txt","a+")) == NULL){
-        cout << "Ìí¼ÓÓÃ»§Ê§°Ü" << endl;
+        cout << "æ·»åŠ ç”¨æˆ·å¤±è´¥" << endl;
         hitback();
         return;
     }
 
     fwrite(AGE,s_c,strlen(AGE),inf_user);
     Blank(inf_user);
-    if(sex == 1) fwrite("ÄÐ",s_c,2,inf_user);
-    else fwrite("Å®",s_c,2,inf_user);
+    if(sex == 1) fwrite("ç”·",s_c,2,inf_user);
+    else fwrite("å¥³",s_c,2,inf_user);
     Blank(inf_user);
     fwrite(info,s_c,strlen(info),inf_user);
     fwrite(ID,s_c,strlen(ID),IDs);
-    fwrite("&",s_c,1,IDs);
+    fwrite(id_sign,s_c,1,IDs);
     fwrite(name,s_c,strlen(name),IDs);
     fwrite("\n",s_c,1,IDs);
 
+    cout << "æ·»åŠ ç”¨æˆ·ï¼š" << ID << "æˆåŠŸ" << endl;
+    hitback();
     fclose(IDs);
     fclose(inf_user);
 }
@@ -492,21 +465,21 @@ void User_delete()
     clrscr();
     int answer = 0;
     char ID[14];
-    cout << line << "É¾³ýÓÃ»§" << line << endl;
-    cout << "ÇëÊäÈëÒªÉ¾³ýµÄÓÃ»§µÄID" << endl;
+    cout << line << "åˆ é™¤ç”¨æˆ·" << line << endl;
+    cout << "è¯·è¾“å…¥è¦åˆ é™¤çš„ç”¨æˆ·çš„ID" << endl;
     cin >> ID;
     if((inf_user = fopen(ID,"r")) == NULL){
-        cout << "²»´æÔÚÓÃ»§£¬Çë¼ì²éÊäÈë" << endl;
+        cout << "ä¸å­˜åœ¨ç”¨æˆ·ï¼Œè¯·æ£€æŸ¥è¾“å…¥" << endl;
         hitback();
         return;
     }
     fclose(inf_user);
     clrscr();
 
-    cout << "È·¶¨ÒªÉ¾³ýID£º" << ID << endl;
+    cout << "ç¡®å®šè¦åˆ é™¤IDï¼š" << ID << endl;
 
     while(answer == 0){
-        cout << "1.È·ÈÏÉ¾³ý" <<endl<<"2.·µ»Ø" << endl;
+        cout << "1.ç¡®è®¤åˆ é™¤" <<endl<<"2.è¿”å›ž" << endl;
         cin>>answer;
         if(answer == 1) {
             if(Delete_ID(ID)==1)
@@ -521,7 +494,7 @@ int Delete_ID(char *ID)
 {
     FILE *IDs_Backup;
     if((IDs=fopen("IDs.txt","r"))==NULL||(IDs_Backup=fopen("IDs_Backup.txt","w+"))==NULL){
-        cout << "É¾³ýÓÃ»§IDÊ§°Ü" << endl;
+        cout << "åˆ é™¤ç”¨æˆ·IDå¤±è´¥" << endl;
         hitback();
         return 0;
     }
@@ -553,7 +526,7 @@ int Delete_ID(char *ID)
                 word = fgetc(IDs);
         }
     }
-    cout << "É¾³ý³É¹¦£¡" << endl;
+    cout << "åˆ é™¤æˆåŠŸï¼" << endl;
     hitback();
 
     fclose(IDs);
@@ -571,40 +544,193 @@ void User_info_c()
     char ID[14];
     char info[101];
     clrscr();
-    cout << line << "ÐÞ¸ÄÓÃ»§ÐÅÏ¢£º" << line << endl;
-    cout << "ÊäÈëÒªÐÞ¸ÄµÄID" << endl;
+    cout << line << "ä¿®æ”¹ç”¨æˆ·ä¿¡æ¯ï¼š" << line << endl;
+    cout << "è¾“å…¥è¦ä¿®æ”¹çš„ID" << endl;
     cin >> ID;
     if((inf_user = fopen(ID,"r+")) == NULL){
-        cout << "¶ÁÈ¡ÓÃ»§Êý¾ÝÊ§°Ü" << endl;
+        cout << "è¯»å–ç”¨æˆ·æ•°æ®å¤±è´¥" << endl;
         hitback();
         return;
     }
     fclose(inf_user);
 
     while(age<=0||age>99){
-        cout << "ÄêÁä(1-99)£º";
+        cout << "å¹´é¾„(1-99)ï¼š";
         cin >> age;
     }
     itoa(age,AGE,10);
     while(sex!=1&&sex!=2){
-        cout << "ÐÔ±ð£º1.ÄÐ\t2.Å®" << endl;
+        cout << "æ€§åˆ«ï¼š1.ç”·\t2.å¥³" << endl;
         cin >> sex;
     }
-    cout << "¸öÈË¼ò½é(100×Ö½Ú):" << endl;
+    cout << "ä¸ªäººç®€ä»‹(100å­—èŠ‚):" << endl;
     cin >> info;
 
     if((inf_user = fopen(ID,"w"))==NULL){
-        cout << "Ð´ÈëÓÃ»§Êý¾ÝÊ§°Ü" << endl;
+        cout << "å†™å…¥ç”¨æˆ·æ•°æ®å¤±è´¥" << endl;
         hitback();
         return;
     }
     fwrite(AGE,s_c,strlen(AGE),inf_user);
     Blank(inf_user);
-    if(sex == 1) fwrite("ÄÐ",s_c,2,inf_user);
-    else fwrite("Å®",s_c,2,inf_user);
+    if(sex == 1) fwrite("ç”·",s_c,2,inf_user);
+    else fwrite("å¥³",s_c,2,inf_user);
     Blank(inf_user);
     fwrite(info,s_c,strlen(info),inf_user);
     fclose(inf_user);
     return;
 }
 
+void Lottery()
+{
+    clrscr();
+    cout << line <<"æŠ½å¥–"<< line <<endl;
+    cout << "1.å•ç»„æŠ½å¥–" <<endl;
+    cout << "2.å¤šç»„æŠ½å¥–" <<endl;
+    cout << "3.è¿”å›ž" << endl;
+    int answer = 0;
+    while(answer==0){
+        cin >> answer;
+        switch(answer){
+            case 1: Single(); break;
+//            case 2: Multi();
+            case 3: return;
+            default : answer = 0;
+        }
+    }
+}
+
+void Single()
+{
+    clrscr();
+    srand((int)time(NULL));
+    if((inf_user = fopen("IDs.txt","r"))==NULL){
+        cout << "è¯»å–ç”¨æˆ·ä¿¡æ¯å¤±è´¥ï¼" << endl;
+        hitback();
+        return;
+    }
+    if((inf_prz = fopen("inf_prz.txt","r"))==NULL){
+        cout << "è¯»å–å¥–å“ä¿¡æ¯å¤±è´¥ï¼" << endl;
+        hitback();
+        return;
+    }
+    if((inf_hstr = fopen("inf_hstr.txt","a"))==NULL){
+        cout << "è¯»å–åŽ†å²ä¿¡æ¯å¤±è´¥ï¼" << endl;
+        hitback();
+        return;
+    }
+    char word = 'a';
+    char ID[id_len];
+    char NAME[n_name];
+    int n_id = 0;       //ç”¨æˆ·æ€»æ•°
+    while(word!=EOF){
+        word = fgetc(inf_user);
+        if(word == '\n') n_id++;
+    }
+
+    int id_rest = n_id;     //æœªä¸­å¥–ç”¨æˆ·æ•°
+    char num_prz[2];        //å¥–å“ç§ç±»æ•°
+    for(i=0;i<2;i++) num_prz[i] = fgetc(inf_prz);
+    int n_prz = atoi(num_prz);  //å¥–å“ç§ç±»æ•°
+    int n_p = 0;            //å•ä¸ªå¥–å“æ•°é‡
+    int id_line=0;         //ä¸­å¥–ç”¨æˆ·çš„IDä½ç½®
+    for(i=0;i<n_prz;i++){   //å¾ªçŽ¯æŠ½å¥–å“æ€»æ•°æ¬¡
+        while(word != start[0]) word = fgetc(inf_prz);
+        for(j=0;j<2;j++) num_prz[j] = fgetc(inf_prz);
+        for(j=0;j<n_name;j++) NAME[j] = '\0';   //åˆå§‹åŒ–å¥–å“åç§°
+        while(word != name_sign[0]) word = fgetc(inf_prz);
+        for(j=0;(word = fgetc(inf_prz))!='\n';j++)
+            NAME[j] = word;
+//       cout <<"å¥–å“åç§°ï¼š" << NAME << endl;
+        n_p = atoi(num_prz);        //è¯»å–æ­¤ç§å¥–å“æ•°é‡
+        int line_list[n_p];         //å‚¨å­˜å·²ä¸­å¥–ç”¨æˆ·
+        for(j=0;j<n_p;j++){         //å¾ªçŽ¯æŠ½æ­¤å¥–å“æ•°é‡æ¬¡
+            for(k=0;k<id_len;k++)   //åˆå§‹åŒ–ID
+                ID[k] = '\0';
+            if(id_rest<=0){        //åˆ¤æ–­ç”¨æˆ·æ˜¯å¦æœ‰å‰©ä½™
+                cout << "å·²æ— ç”¨æˆ·ï¼" << endl;
+                hitback();
+                return;
+            }
+            while(1){               //éšæœºID
+                id_line = rand()%n_id+1;
+                if(!Used_Line(id_line,j,line_list)) break;
+            }
+
+            line_list[j] = id_line;             //å‚¨å­˜ä¸­å¥–ID
+            Get_ID(ID,id_line,inf_user);        //è¯»å–ç”¨æˆ·ID
+            cout <<"æ­å–œIDï¼š" <<ID << " ä¸­å¥–ï¼š";
+            cout << NAME << endl;
+            id_rest--;              //å‰©ä½™IDæ•°-1
+            Record_Time(inf_hstr);
+            fwrite("ä¸­å¥–ID: ",s_c,8,inf_hstr);
+            fwrite(ID,s_c,strlen(ID),inf_hstr);
+            fwrite("\0|\0",s_c,3,inf_hstr);
+            fwrite(" å¥–å“åç§°ï¼š",s_c,11,inf_hstr);
+            fwrite(NAME,s_c,strlen(NAME),inf_hstr);
+            Blank(inf_hstr);
+        }
+    }
+
+    fclose(inf_user);
+    fclose(inf_prz);
+    fclose(inf_hstr);
+    hitback();
+}
+
+void Get_ID(char *str, int line, FILE *stream)
+{
+    fseek(stream,0,SEEK_SET);
+    char out = 'a';
+    for(k=0;k<line;out = fgetc(stream)){
+        if(out == '\n') k++;
+    }
+    for(k=0;out!='\n';k++){
+        if(out!=id_sign[0]) str[k] = out;
+        else return;
+        out = fgetc(stream);
+    }
+}
+
+int Used_Line(int id, int m, int line_list[])
+{
+    for(k=0;k<m;k++){
+        if(id==line_list[k])
+            return 1;
+    }
+    return 0;
+}
+
+void Record_Time(FILE *file)
+{
+    time_t timep;
+    struct tm *p;
+    time(&timep);
+    p = gmtime(&timep);
+    int year = 1900+p->tm_year;
+    int mon = 1+p->tm_mon;
+    int day = p->tm_mday;
+    int hour = 8+p->tm_hour;
+    int mini = p->tm_min;
+    int sec = p->tm_sec;
+    char time[5];
+    fwrite("æ—¶é—´:",s_c,5,file);
+    itoa(year,time,10);
+    fwrite(time,s_c,strlen(time),file);
+    fwrite("/",s_c,1,file);
+    itoa(mon,time,10);
+    fwrite(time,s_c,strlen(time),file);
+    fwrite("/",s_c,1,file);
+    itoa(day,time,10);
+    fwrite(time,s_c,strlen(time),file);
+    fwrite("\0",s_c,1,file);
+    itoa(hour,time,10);
+    fwrite(time,s_c,strlen(time),file);
+    fwrite(":",s_c,1,file);
+    itoa(mini,time,10);
+    fwrite(time,s_c,strlen(time),file);
+    fwrite(":",s_c,1,file);
+    itoa(sec,time,10);
+    fwrite(time,s_c,strlen(time),file);
+    fwrite("\0|\0",s_c,3,file);
+}
