@@ -1,0 +1,8 @@
+# depslib dependency file v1.0
+1536717766 source:c:\users\efuious\desktop\programe\choujiang\main.cpp
+	<iostream>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<conio.h>
+
