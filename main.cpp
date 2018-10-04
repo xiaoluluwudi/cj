@@ -12,51 +12,52 @@ using namespace std;
 #define min_n 0
 #define max_n 100
 #define id_len 15
+#define n_illegal 9
 
-FILE* inf_itdc;
-FILE* inf_hstr;
-FILE* inf_prz;
-FILE* inf_prz_1;
-FILE* inf_prz_2;
-FILE* inf_prz_3;
-FILE* inf_user;
-FILE* IDs;
+FILE* inf_itdc;     //抽奖介绍文本
+FILE* inf_hstr;     //历史抽奖记录文本
+FILE* inf_prz;      //奖品记录文本
+FILE* inf_user;     //用户文档指针
+FILE* IDs;          //用户ID储存文本
 
-int i = 0;
-int j = 0;
-int k = 0;
-char line[6]="-----";
-char start[2] = "{";
-char over[2] = "}";
-char id_sign[2] = "&";
-char name_sign[2] = "(";
+char line[6]="=====";       //固定显示
+char start[2] = "{";        //信息起始符
+char over[2] = "}";         //信息终止符
+char id_sign[2] = "&";      //信息起始符
+char name_sign[2] = "(";    //信息起始符
+char illegal_word[n_illegal] = "&({}[]\\/";     //禁止输入的非法字符
+char path[10] = "user_inf/";
 
-void Instructions();
-int MainPage();
-void clrscr();
-void hitback();
-void Blank(FILE* file);
-void Lottery();
-void Back_Stage();
-void User_set();
-void User_add();
-void User_delete();
-void User_info_c();
-void Info_set();
-void Lottery_set();
-void History_set();
-void Info();
-void Info_User();
-void Info_introduce();
-void Info_prize();
-void Info_history();
-void About_Us();
-int Delete_ID(char *ID);
-int Existe_ID(char *ID);
-void Single();
-void Get_ID(char *str, int line, FILE *stream);
-int Used_Line(int id, int m, int line_list[]);
-void Record_Time(FILE *file);
+void Instructions();        //用户指导
+int MainPage();             //主界面
+void clrscr();              //清屏函数
+void hitback();             //点击返回
+void Blank(FILE* file);     //指定文本换行
+void Lottery();             //抽奖
+void Back_Stage();          //后台
+void User_set();            //用户设置界面
+void User_add();            //添加用户
+void User_delete();         //删除用户
+void User_info_c();         //更换用户信息
+void Info_set();            //抽奖信息管理
+void Lottery_set();         //奖品设置
+void History_set();         //历史信息管理
+void Info();                //信息查看
+void Info_User();           //用户信息查看
+void Info_introduce();      //抽奖简介信息查看
+void Info_prize();          //奖品信息查看
+void Info_history();        //历史信息查看
+void About_Us();            //关于我们
+int Delete_ID(char *ID);        //删除ID
+int Existe_ID(char *ID);        //判断ID是否存在
+int Illegal_word(char *line);
+void Single();                  //单人抽奖
+void Get_ID(char *str, int line, FILE *file);   //读取ID
+int Used_Line(int id, int m, int line_list[]);  //判断ID是否重复抽取
+void Record_Time(FILE *file);           //记录时间
+void F_Add(char *f,char *b,char *t);
+int Input(char *input, int len);
+int Input_B(char* input, int len);
 
 int main()
 {
@@ -77,14 +78,15 @@ void Instructions()
 
 int MainPage()
 {
-    int answer = 0;
+    char answer = '0';
     while(1){
         cin >> answer;
-        switch(answer){
+        switch(answer-'0'){
         case 1: Lottery(); break;
         case 2: Back_Stage(); break;
         case 3: Info(); break;
         case 4: exit(0); break;
+        default : answer = '0'; break;
         }
         Instructions();
     }
@@ -92,8 +94,8 @@ int MainPage()
 
 void Back_Stage()
 {
-    int answer = 0;
-    while(!answer){
+    char answer = '0';
+    while(1){
         clrscr();
         cout << line <<"欢迎来到后台" << line << endl;
         cout << "1.设置信息简介" << endl;
@@ -102,22 +104,22 @@ void Back_Stage()
         cout << "4.用户管理" << endl;
         cout << "5.返回" << endl;
         cin >> answer;
-        switch(answer){
+        switch(answer-'0'){
             case 1: Info_set(); break;
             case 2: Lottery_set(); break;
             case 3: History_set(); break;
             case 4: User_set(); break;
             case 5: return;
-            default: answer = 0;
+            default: answer = '0'; break;
         }
-        answer = 0;
+        answer = '0';
     }
 }
 
 void Info_set()
 {
     clrscr();
-    if((inf_itdc = fopen("inf_itdc.txt","w")) == NULL){
+    if((inf_itdc = fopen("sys_inf/inf_itdc.txt","w")) == NULL){
         cout << "打开文件失败" << endl;
         hitback();
         return;
@@ -125,15 +127,18 @@ void Info_set()
     char inf[max_n+1];
     cout << line << "设置信息简介" << line << endl;
     cout << "编辑抽奖信息简介：" << endl;
-    cin >> inf;
+    if(Input_B(inf,max_n+1)==0) return;
+    //cin >> inf;
     fwrite(inf,s_c,strlen(inf),inf_itdc);
     fclose(inf_itdc);
+    cout << "设置成功！" << endl;
+    hitback();
 }
 
 void History_set()
 {
     clrscr();
-    if((inf_hstr = fopen("inf_hstr.txt","w+")) == NULL){
+    if((inf_hstr = fopen("sys_inf/inf_hstr.txt","r")) == NULL){
         cout << "暂无抽奖历史记录" << endl;
         hitback();
         return;
@@ -141,55 +146,57 @@ void History_set()
     fclose(inf_hstr);
     cout << "清除抽奖历史信息？" << endl;
     cout << "1.确认" << endl << "2.返回" << endl;
-    int answer = 0;
-    while(answer == 0){
+    char answer = '0';
+    while(1){
         cin>>answer;
-        if(answer == 1) {
-            remove("inf_hstr.txt");
+        if((answer-'0') == 1) {
+            remove("sys_inf/inf_hstr.txt");
             cout << "删除成功！" <<endl;
             hitback();
             return;
         }
-        else if(answer==2) return;
-        else answer = 0;
+        else if((answer-'0')==2) return;
+        else answer = '0';
     }
 }
 
 void Lottery_set()
 {
     clrscr();
-    if((inf_prz = fopen("inf_prz.txt","w")) == NULL){
+    if((inf_prz = fopen("sys_inf/inf_prz.txt","w")) == NULL){
         cout << "打开文件失败" << endl;
         return;
     }
     char name[n_name];
     char N[3];
     char inf[max_n+1];
+    int num_t = 0;
     int num_p = 0;
-    int num = 0;
+    int i = 0;
 
     cout << line << "设置奖项" << line << endl;
 
-    while(num_p<=0||num_p>99){
+    while(num_t<=0||num_t>99){
         cout << "奖品种类数(1-99)：";
-        cin >>num_p;
+        cin >>num_t;
     }
-    itoa(num_p,N,10);
+    itoa(num_t,N,10);       //数字转字符
     fwrite(N,s_c,strlen(N),inf_prz);
     Blank(inf_prz);
 
-    for(i=0;i<num_p;i++){
+    for(i=0;i<num_t;i++){
         cout << i+1 << "号奖品："<< endl;
         cout << "名称：" ;
-        cin >> name;
-        num = 0;
-        while(num <=0){
+        if(Input_B(name,n_name) == 0) return;
+        num_p = 0;
+        while(num_p <=0){
             cout << "数量：" ;
-            cin >> num;
+            cin >> num_p;
         }
+
         cout << "奖品详情：" ;
-        cin >> inf;
-        itoa(num,N,10);
+        if(Input_B(inf,max_n+1) == 0) return;
+        itoa(num_p,N,10);
         fwrite(start,s_c,1,inf_prz);
         fwrite(N,s_c,strlen(N),inf_prz);
         Blank(inf_prz);
@@ -207,8 +214,8 @@ void Lottery_set()
 
 void Info()
 {
-    int answer=0;
-    while(!answer){
+    char answer='0';
+    while(1){
         clrscr();
         cout << line << "信息查看" << line << endl;
         cout << "1.抽奖简介" << endl;
@@ -218,27 +225,26 @@ void Info()
         cout << "5.关于我们" << endl;
         cout << "6.返回" << endl;
         cin >> answer;
-        switch(answer){
+        switch(answer-'0'){
             case 1: Info_introduce(); break;
             case 2: Info_prize(); break;
             case 3: Info_history(); break;
             case 4: Info_User(); break;
             case 5: About_Us(); break;
             case 6: return;
-            default: answer = 0;break;
+            default: answer = '0';break;
         }
-        answer = 0;
     }
 }
 
 void Info_introduce()
 {
     clrscr();
-    if((inf_itdc = fopen("inf_itdc.txt","r")) == NULL){
+    if((inf_itdc = fopen("sys_inf/inf_itdc.txt","r")) == NULL){
         cout << "读取信息失败" << endl;
         return;
     }
-    char word = 'a';
+    char word = '0';
     cout << line << "抽奖简介" << line <<endl;
     while(word!=EOF){
         word = fgetc(inf_itdc);
@@ -252,13 +258,14 @@ void Info_introduce()
 void Info_prize()
 {
     clrscr();
-    if((inf_prz = fopen("inf_prz.txt","r")) == NULL){
+    if((inf_prz = fopen("sys_inf/inf_prz.txt","r")) == NULL){
         cout << "读取信息失败" << endl;
         hitback();
         return;
     }
     char word = fgetc(inf_prz);
     int num = word - '0';
+    int i = 0;
 
     cout << line << "奖品信息" << line << endl;
     for(i=0;i<num;i++){
@@ -273,7 +280,7 @@ void Info_prize()
         cout << "名称: ";
         while((word = fgetc(inf_prz))!='\n')
             cout << word;
-        word = 'a';
+        word = '0';
         cout << endl <<"奖品信息：";
         while(word!='\n') {
             word = fgetc(inf_prz);
@@ -288,17 +295,16 @@ void Info_prize()
 void Info_history()
 {
     clrscr();
-    if((inf_hstr = fopen("inf_hstr.txt","r")) == NULL){
+    if((inf_hstr = fopen("sys_inf/inf_hstr.txt","r")) == NULL){
         cout << "暂无历史抽奖信息" << endl;
         hitback();
         return;
     }
-    char word = 'a';
+    char word = '0';
     while(word!=EOF){
         word = fgetc(inf_hstr);
         cout << word;
     }
-    cout << endl;
     hitback();
     fclose(inf_hstr);
 }
@@ -306,50 +312,82 @@ void Info_history()
 void Info_User()
 {
     clrscr();
-    char word = 'a';
-    char ID[id_len];
+    char word = '0';
+    char id[id_len];
+
     cout << line << "用户信息" << endl;
     cout << "输入想要查看的用户ID: ";
-    cin >> ID;
+    if(Input(id,id_len) == 0) return;
+    int len = strlen(id)+strlen(path);
+    char *ID = new char[len+1];
+    F_Add(path,id,ID);
     if((inf_user = fopen(ID,"r"))==NULL){
-        cout << "不存在用户: " << ID << endl;
+        cout << "不存在用户: " << id << endl;
+        delete ID;
         hitback();
         return;
     }
-    cout << "姓名：";
+    if((IDs = fopen("sys_inf/IDs.txt","r"))==NULL){
+        cout << "读取用户信息失败！" << endl;
+        delete ID;
+        hitback();
+        return;
+    }
+    cout << "ID:" << id << endl;
+    cout << "姓名：" ;
+    int i = 0;
+    int j = 0;
+    int out = 0;
+    int recorder = 0;
+    int l = strlen(id);
+    char line[id_len];
+    while(!out){
+        recorder = 0;
+        for(i=0;i<id_len;i++) line[i] = '\0';
+        for(i=0;(word = fgetc(IDs))!=id_sign[0];i++)
+            line[i] = word;
+        if(l == i){
+            for(j=0;j<i;j++){
+                if(line[j]==id[j]) recorder++;
+            }
+            if(recorder == i) {
+                while((word = fgetc(IDs))!='\n') cout << word;
+                out = 1;
+            }
+        }
+        while((word=fgetc(IDs))!='\n'&&word!=EOF);
+    }
+
+    word = '0';
+    cout << endl<<"年龄：";
     while(word!='\n'&&word!=EOF){
         word = fgetc(inf_user);
         cout << word;
     }
-    word = 'a';
-    cout << endl << "年龄：";
+    word = '0';
+    cout << "性别：";
     while(word!='\n'&&word!=EOF){
         word = fgetc(inf_user);
         cout << word;
     }
-    word = 'a';
-    cout << endl << "性别：";
-    while(word!='\n'&&word!=EOF){
-        word = fgetc(inf_user);
-        cout << word;
-    }
-    word = 'a';
-    cout << endl << "简介：";
+    word = '0';
+    cout << "简介：";
     while(word!='\n'&&word!=EOF){
         word = fgetc(inf_user);
         cout << word;
     }
     cout << endl;
-    hitback();
     fclose(inf_user);
+    delete ID;
+    hitback();
 }
 
 void About_Us()
 {
-    char word = 'a';
+    char word = '0';
     clrscr();
     FILE *about ;
-    if((about = fopen("about_us.txt","r"))==NULL){
+    if((about = fopen("sys_inf/about_us.txt","r"))==NULL){
         cout << "读取信息失败！" << endl;
         hitback();
         return;
@@ -371,6 +409,7 @@ void clrscr()
 
 void hitback()
 {
+    cout << endl;
     system("pause");
 }
 
@@ -381,7 +420,7 @@ void Blank(FILE* file)
 
 void User_set()
 {
-    int answer = 0;
+    char answer = '0';
     while(1){
         clrscr();
         cout << line << "用户管理" << line << endl;
@@ -390,124 +429,157 @@ void User_set()
         cout << "3.修改用户信息" << endl;
         cout << "4.返回" << endl;
         cin >> answer;
-        if(answer == 1) User_add();
-        else if(answer == 2) User_delete();
-        else if(answer == 3) User_info_c();
-        else if(answer == 4) return;
-        else answer = 0;
+        switch(answer-'0'){
+            case 1: User_add(); break;
+            case 2: User_delete(); break;
+            case 3: User_info_c(); break;
+            case 4: return;
+            default: answer = '0';
+        }
     }
 }
 
 void User_add()
 {
-    char name[11];
     int age = 0;
-    int sex = 0;
+    char sex = '0';
+    char id[id_len];
     char AGE[3];
-    char ID[14];
-    char info[101];
+    char name[n_name];
+    char info[max_n+1];
     clrscr();
     cout << line << "添加用户" << line << endl;
     cout << "登记用户信息：" << endl;
     cout << "ID(用户身份识别码): ";
-    cin >> ID;
+    if(Input(id,id_len) == 0) return;
+    int len = strlen(id)+strlen(path);
+    char *ID = new char[len+1];
+    F_Add(path,id,ID);
     if((inf_user = fopen(ID,"r"))!=NULL){
         cout << "用户已存在" << endl;
-        hitback();
+        delete ID;
         fclose(inf_user);
+        hitback();
         return;
     }
 
     cout << "姓名(10字节)：" ;
-    cin >> name;
+    if(Input(name,n_name) == 0) return;
+
     while(age<=0||age>99){
         cout << "年龄(1-99)：";
         cin >> age;
     }
     itoa(age,AGE,10);
-    while(sex!=1&&sex!=2){
+    while((sex-'0')!=1&&(sex-'0')!=2){
         cout << "性别：1.男\t2.女" << endl;
         cin >> sex;
     }
+
     cout << "个人简介(100字节):" << endl;
-    cin >> info;
+    if(Input_B(info,max_n+1) == 0) return;
 
     if((inf_user = fopen(ID,"w+"))==NULL){
-        cout << "添加用户失败" << endl;
+        cout << "创建用户信息失败" << endl;
+        delete ID;
         hitback();
         return;
     }
-    if((IDs = fopen("IDs.txt","a+")) == NULL){
-        cout << "添加用户失败" << endl;
+    if((IDs = fopen("sys_inf/IDs.txt","a+")) == NULL){
+        cout << "创建用户ID失败" << endl;
+        delete ID;
+        fclose(inf_user);
         hitback();
         return;
     }
 
     fwrite(AGE,s_c,strlen(AGE),inf_user);
     Blank(inf_user);
-    if(sex == 1) fwrite("男",s_c,2,inf_user);
+    if((sex-'0') == 1) fwrite("男",s_c,2,inf_user);
     else fwrite("女",s_c,2,inf_user);
     Blank(inf_user);
     fwrite(info,s_c,strlen(info),inf_user);
-    fwrite(ID,s_c,strlen(ID),IDs);
+    fwrite(id,s_c,strlen(id),IDs);
     fwrite(id_sign,s_c,1,IDs);
     fwrite(name,s_c,strlen(name),IDs);
     fwrite("\n",s_c,1,IDs);
 
-    cout << "添加用户：" << ID << "成功" << endl;
+    cout << "添加用户：" << id << "成功" << endl;
     hitback();
     fclose(IDs);
     fclose(inf_user);
+    delete ID;
 }
 
 void User_delete()
 {
     clrscr();
-    int answer = 0;
-    char ID[14];
+    char answer = '0';
+    char id[id_len];
     cout << line << "删除用户" << line << endl;
     cout << "请输入要删除的用户的ID" << endl;
-    cin >> ID;
+    if(Input(id,id_len) == 0) return;
+    int len = strlen(id)+strlen(path);
+    char *ID = new char[len+1];
+    F_Add(path,id,ID);
     if((inf_user = fopen(ID,"r")) == NULL){
-        cout << "不存在用户，请检查输入" << endl;
+        cout << "不存在ID:"<< id << endl;
+        delete ID;
         hitback();
         return;
     }
     fclose(inf_user);
     clrscr();
 
-    cout << "确定要删除ID：" << ID << endl;
+    cout << "确定要删除ID：" << id <<"?"<< endl;
 
-    while(answer == 0){
+    int in;
+    while(answer == '0'){
         cout << "1.确认删除" <<endl<<"2.返回" << endl;
         cin>>answer;
-        if(answer == 1) {
-            if(Delete_ID(ID)==1)
-                remove(ID);
+        in = answer - '0';
+        if(in == 1){
+                if(Delete_ID(id)==1){
+                    remove(ID);
+                    cout << "删除成功！" << endl;
+                    delete ID;
+                    hitback();
+                    return;
+                }
+        }else if(in == 2){
+            delete ID;
+            return;
         }
-        else if(answer == 2) return;
-        else answer = 0;
     }
+    delete ID;
 }
 
 int Delete_ID(char *ID)
 {
     FILE *IDs_Backup;
-    if((IDs=fopen("IDs.txt","r"))==NULL||(IDs_Backup=fopen("IDs_Backup.txt","w+"))==NULL){
+    if((IDs=fopen("sys_inf/IDs.txt","r"))==NULL){
         cout << "删除用户ID失败" << endl;
         hitback();
         return 0;
     }
+    if((IDs_Backup=fopen("sys_inf/IDs_Backup.txt","w+"))==NULL){
+        cout << "删除用户ID失败" << endl;
+        fclose(IDs);
+        hitback();
+        return 0;
+    }
 
+    int i = 0;
+    int j = 0;
     int len = strlen(ID);
     int out = 0;
     int recorder = 0;
     char line[id_len+n_name+1];
-    char word = 'a';
+    char word = '0';
 
     while(!out){
         recorder = 0;
-        word = 'a';
+        word = '0';
         for(i=0;i<len;i++) line[i] = '\0';
         for(i=0;word!='\n';i++){
             word = fgetc(IDs);
@@ -526,27 +598,29 @@ int Delete_ID(char *ID)
                 word = fgetc(IDs);
         }
     }
-    cout << "删除成功！" << endl;
-    hitback();
 
     fclose(IDs);
     fclose(IDs_Backup);
-    remove("IDs.txt");
-    rename("IDs_Backup.txt","IDs.txt");
+    remove("sys_inf/IDs.txt");
+    rename("sys_inf/IDs_Backup.txt","sys_inf/IDs.txt");
     return 1;
 }
 
 void User_info_c()
 {
     int age = 0;
-    int sex = 0;
+    char sex = '0';
     char AGE[3];
-    char ID[14];
-    char info[101];
+    char id[id_len];
+    char info[max_n+1];
     clrscr();
     cout << line << "修改用户信息：" << line << endl;
     cout << "输入要修改的ID" << endl;
-    cin >> ID;
+    if(Input(id,id_len) == 0) return;
+    int len = strlen(id)+strlen(path);
+    char *ID = new char[len+1];
+    F_Add(path,id,ID);
+    cout << ID << endl;
     if((inf_user = fopen(ID,"r+")) == NULL){
         cout << "读取用户数据失败" << endl;
         hitback();
@@ -558,13 +632,15 @@ void User_info_c()
         cout << "年龄(1-99)：";
         cin >> age;
     }
-    itoa(age,AGE,10);
-    while(sex!=1&&sex!=2){
+    itoa(age-'0',AGE,10);
+    while((sex-'0')!=1&&(sex-'0')!=2){
         cout << "性别：1.男\t2.女" << endl;
         cin >> sex;
     }
-    cout << "个人简介(100字节):" << endl;
-    cin >> info;
+    while(1){
+        cout << "个人简介(100字节):" << endl;
+        if(Input(info,max_n+1) == 0) return;
+    }
 
     if((inf_user = fopen(ID,"w"))==NULL){
         cout << "写入用户数据失败" << endl;
@@ -573,11 +649,12 @@ void User_info_c()
     }
     fwrite(AGE,s_c,strlen(AGE),inf_user);
     Blank(inf_user);
-    if(sex == 1) fwrite("男",s_c,2,inf_user);
+    if((sex-'0') == 1) fwrite("男",s_c,2,inf_user);
     else fwrite("女",s_c,2,inf_user);
     Blank(inf_user);
     fwrite(info,s_c,strlen(info),inf_user);
     fclose(inf_user);
+    delete ID;
     return;
 }
 
@@ -588,14 +665,14 @@ void Lottery()
     cout << "1.单组抽奖" <<endl;
     cout << "2.多组抽奖" <<endl;
     cout << "3.返回" << endl;
-    int answer = 0;
-    while(answer==0){
+    char answer = '0';
+    while(answer=='0'){
         cin >> answer;
-        switch(answer){
+        switch(answer-'0'){
             case 1: Single(); break;
-//            case 2: Multi();
+//            case 2: Multi(); break;
             case 3: return;
-            default : answer = 0;
+            default : answer = '0';
         }
     }
 }
@@ -604,36 +681,46 @@ void Single()
 {
     clrscr();
     srand((int)time(NULL));
-    if((inf_user = fopen("IDs.txt","r"))==NULL){
+    if((inf_user = fopen("sys_inf/IDs.txt","r"))==NULL){
         cout << "读取用户信息失败！" << endl;
         hitback();
         return;
     }
-    if((inf_prz = fopen("inf_prz.txt","r"))==NULL){
+    if((inf_prz = fopen("sys_inf/inf_prz.txt","r"))==NULL){
         cout << "读取奖品信息失败！" << endl;
+        fclose(inf_user);
         hitback();
         return;
     }
-    if((inf_hstr = fopen("inf_hstr.txt","a"))==NULL){
+    if((inf_hstr = fopen("sys_inf/inf_hstr.txt","a"))==NULL){
         cout << "读取历史信息失败！" << endl;
+        fclose(inf_user);
+        fclose(inf_prz);
         hitback();
         return;
     }
-    char word = 'a';
+    char word = '0';
     char ID[id_len];
     char NAME[n_name];
+    int i = 0;
+    int j = 0;
+    int k = 0;
     int n_id = 0;       //用户总数
-    while(word!=EOF){
-        word = fgetc(inf_user);
-        if(word == '\n') n_id++;
-    }
-
-    int id_rest = n_id;     //未中奖用户数
+    int id_rest;     //未中奖用户数
     char num_prz[2];        //奖品种类数
     for(i=0;i<2;i++) num_prz[i] = fgetc(inf_prz);
     int n_prz = atoi(num_prz);  //奖品种类数
     int n_p = 0;            //单个奖品数量
     int id_line=0;         //中奖用户的ID位置
+    int counter = 0;
+    int line_list[n_prz*99];         //储存已中奖用户
+
+    while(word!=EOF){
+        word = fgetc(inf_user);
+        if(word == '\n') n_id++;
+    }
+    id_rest = n_id;
+
     for(i=0;i<n_prz;i++){   //循环抽奖品总数次
         while(word != start[0]) word = fgetc(inf_prz);
         for(j=0;j<2;j++) num_prz[j] = fgetc(inf_prz);
@@ -641,27 +728,26 @@ void Single()
         while(word != name_sign[0]) word = fgetc(inf_prz);
         for(j=0;(word = fgetc(inf_prz))!='\n';j++)
             NAME[j] = word;
-//       cout <<"奖品名称：" << NAME << endl;
-        n_p = atoi(num_prz);        //读取此种奖品数量
-        int line_list[n_p];         //储存已中奖用户
+        n_p = atoi(num_prz);    //读取此种奖品数量
+
         for(j=0;j<n_p;j++){         //循环抽此奖品数量次
             for(k=0;k<id_len;k++)   //初始化ID
                 ID[k] = '\0';
+            while(Used_Line(id_line,counter,line_list)){               //随机ID
+                id_line = rand()%n_id;
+            }
+
+            line_list[counter] = id_line;             //储存中奖ID
+            Get_ID(ID,id_line,inf_user);        //读取用户ID
+            cout <<"恭喜ID：" <<ID<< " 中奖：";
+            cout << NAME << endl;
+
+            id_rest--;              //剩余ID数-1
             if(id_rest<=0){        //判断用户是否有剩余
                 cout << "已无用户！" << endl;
                 hitback();
                 return;
             }
-            while(1){               //随机ID
-                id_line = rand()%n_id+1;
-                if(!Used_Line(id_line,j,line_list)) break;
-            }
-
-            line_list[j] = id_line;             //储存中奖ID
-            Get_ID(ID,id_line,inf_user);        //读取用户ID
-            cout <<"恭喜ID：" <<ID << " 中奖：";
-            cout << NAME << endl;
-            id_rest--;              //剩余ID数-1
             Record_Time(inf_hstr);
             fwrite("中奖ID: ",s_c,8,inf_hstr);
             fwrite(ID,s_c,strlen(ID),inf_hstr);
@@ -669,6 +755,7 @@ void Single()
             fwrite(" 奖品名称：",s_c,11,inf_hstr);
             fwrite(NAME,s_c,strlen(NAME),inf_hstr);
             Blank(inf_hstr);
+            counter++;
         }
     }
 
@@ -678,27 +765,47 @@ void Single()
     hitback();
 }
 
-void Get_ID(char *str, int line, FILE *stream)
+void Get_ID(char *str, int line, FILE *file)
 {
-    fseek(stream,0,SEEK_SET);
-    char out = 'a';
-    for(k=0;k<line;out = fgetc(stream)){
-        if(out == '\n') k++;
+    fseek(file,0,SEEK_SET);
+    char out = '0';
+    int k = 0;
+    if(line==0) {
+        for(k=0;(out = fgetc(file))!=id_sign[0];k++)
+            str[k] = out;
+            return;
     }
-    for(k=0;out!='\n';k++){
-        if(out!=id_sign[0]) str[k] = out;
-        else return;
-        out = fgetc(stream);
+    else{
+        for(k=0;k<line;out = fgetc(file)){
+            if(out == '\n') k++;
+        }
+        for(k=0;out!=id_sign[0];k++){
+            str[k] = out;
+            out = fgetc(file);
+        }
     }
 }
 
 int Used_Line(int id, int m, int line_list[])
 {
+    int k = 0;
     for(k=0;k<m;k++){
         if(id==line_list[k])
             return 1;
     }
     return 0;
+}
+
+void F_Add(char *f,char *b,char *t)
+{
+    int i = 0;
+    int j = 0;
+
+    int len1 = strlen(f);
+    int len2 = strlen(b);
+
+    for(i=0;i<len1;i++) t[i] = f[i];
+    for(j=0;j<len2;j++) t[j+i] = b[j];
 }
 
 void Record_Time(FILE *file)
@@ -707,7 +814,7 @@ void Record_Time(FILE *file)
     struct tm *p;
     time(&timep);
     p = gmtime(&timep);
-    int year = 1900+p->tm_year;
+    int year = p->tm_year - 100;
     int mon = 1+p->tm_mon;
     int day = p->tm_mday;
     int hour = 8+p->tm_hour;
@@ -733,4 +840,59 @@ void Record_Time(FILE *file)
     itoa(sec,time,10);
     fwrite(time,s_c,strlen(time),file);
     fwrite("\0|\0",s_c,3,file);
+}
+
+int Illegal_word(char word)
+{
+    int j = 0;
+    for(j=0;j<n_illegal;j++){
+        if(word == illegal_word[j]) {
+                cout << "检测到非法字符：";
+                cout << word << endl;
+                return 1;
+        }
+    }
+    return 0;
+}
+
+int Input(char* input, int len)
+{
+    int i = 0;
+    int l = 0;
+    int illegal = 0;
+    while(1){
+        illegal = 0;
+        cin.sync();     //清空缓冲区
+        cin.get(input,len);
+        l = strlen(input);
+        for(i=0;i<l;i++){
+            //if(input[i] == 27) return 0;
+            if(Illegal_word(input[i]) == 1) illegal = 1;
+            if(input[i] == ' ') {
+                    cout << "此处禁止输入空格符！" << endl;
+                    illegal = 1;
+            }
+        }
+        if(illegal == 1) cout << "请重新输入: ";
+        else return 1;
+    }
+}
+
+int Input_B(char* input, int len)
+{
+    int i = 0;
+    int l = 0;
+    int illegal = 0;
+    while(1){
+        illegal = 0;
+        cin.sync();     //清空缓冲区
+        cin.get(input,len);
+        l = strlen(input);
+        for(i=0;i<l;i++){
+            //if(input[i] == 27) return 0;
+            if(Illegal_word(input[i]) == 1) illegal = 1;
+        }
+        if(illegal == 1) cout << "请重新输入: ";
+        else return 1;
+    }
 }
